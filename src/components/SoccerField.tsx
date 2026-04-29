@@ -204,64 +204,61 @@ export default function SoccerField({
     if (p.team === 'away' && !showAwayTeam) return null
     const isHome = p.team === 'home'
     const isDragging = dragging?.id === p.id
-    const r = 2.8  // visible radius
+    const r = 2.8
 
     return (
       <g
         key={p.id}
+        // SVG attribute positions the player in SVG coordinate space — never use CSS transform here
         transform={`translate(${p.x},${p.y})`}
-        // FIX 6: disable pointer events when a drawing tool is active so strokes pass through
         style={{
           pointerEvents: activeTool === 'select' ? 'all' : 'none',
           touchAction: 'none',
           userSelect: 'none',
-          // FIX 4: scale up smoothly when dragging for clear visual "lift" feedback
-          transform: `translate(${p.x}px,${p.y}px) scale(${isDragging ? 1.3 : 1})`,
-          transformOrigin: `${p.x}px ${p.y}px`,
-          transition: isDragging ? 'none' : 'transform 0.12s ease',
-          // FIX 5: grabbing cursor while dragging
           cursor: isDragging ? 'grabbing' : activeTool === 'select' ? 'grab' : 'default',
         }}
         onPointerDown={(e) => handlePlayerDown(e, p.id)}
-        // FIX 3: only open edit modal if the pointer barely moved (click, not drag)
         onClick={() => {
           if (activeTool === 'select' && !didDragRef.current) onPlayerClick(p.id)
         }}
       >
-        {/* FIX 2: large invisible hit area — 2× the visible circle — makes it easy to grab */}
+        {/* Large invisible hit area — makes the player easy to grab on touch */}
         <circle r={r * 2} fill="transparent" />
 
-        {/* Dropped shadow — larger + darker while dragging */}
-        <ellipse
-          cx={isDragging ? 0.6 : 0.3}
-          cy={isDragging ? r * 1.4 : r * 0.8}
-          rx={isDragging ? r * 1.3 : r * 0.9}
-          ry={isDragging ? r * 0.55 : r * 0.35}
-          fill={isDragging ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.2)'}
-        />
-
-        {/* Player circle */}
-        <circle r={r}
-          fill={p.color}
-          stroke={isDragging ? 'rgba(255,255,255,1)' : isHome ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.6)'}
-          strokeWidth={isDragging ? 0.7 : isHome ? 0.5 : 0.3}
-        />
-
-        {/* Jersey number */}
-        <text
-          textAnchor="middle" dominantBaseline="central"
-          fontSize={p.number >= 10 ? 2.4 : 2.8}
-          fontWeight="bold" fill={p.textColor}
-          fontFamily="system-ui, sans-serif"
-          style={{ pointerEvents: 'none' }}>
-          {p.number}
-        </text>
-
-        {/* Away team indicator dot */}
-        {!isHome && (
-          <circle cx={r * 0.65} cy={-r * 0.65} r={0.65}
-            fill="white" stroke={p.color} strokeWidth="0.15" />
-        )}
+        {/* Inner group: CSS scale-only transform, centered at (0,0) = player center */}
+        <g style={{
+          transform: `scale(${isDragging ? 1.25 : 1})`,
+          transition: isDragging ? 'none' : 'transform 0.12s ease',
+        }}>
+          {/* Dropped shadow */}
+          <ellipse
+            cx={isDragging ? 0.6 : 0.3}
+            cy={isDragging ? r * 1.4 : r * 0.8}
+            rx={isDragging ? r * 1.3 : r * 0.9}
+            ry={isDragging ? r * 0.55 : r * 0.35}
+            fill={isDragging ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.2)'}
+          />
+          {/* Player circle */}
+          <circle r={r}
+            fill={p.color}
+            stroke={isDragging ? 'white' : isHome ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.6)'}
+            strokeWidth={isDragging ? 0.7 : isHome ? 0.5 : 0.3}
+          />
+          {/* Jersey number */}
+          <text
+            textAnchor="middle" dominantBaseline="central"
+            fontSize={p.number >= 10 ? 2.4 : 2.8}
+            fontWeight="bold" fill={p.textColor}
+            fontFamily="system-ui, sans-serif"
+            style={{ pointerEvents: 'none' }}>
+            {p.number}
+          </text>
+          {/* Away team indicator dot */}
+          {!isHome && (
+            <circle cx={r * 0.65} cy={-r * 0.65} r={0.65}
+              fill="white" stroke={p.color} strokeWidth="0.15" />
+          )}
+        </g>
       </g>
     )
   }
@@ -270,34 +267,35 @@ export default function SoccerField({
     const isDragging = dragging?.type === 'ball'
     return (
       <g
+        // SVG attribute positions the ball — no CSS transform on this element
         transform={`translate(${ball.x},${ball.y})`}
         style={{
           pointerEvents: activeTool === 'select' ? 'all' : 'none',
           touchAction: 'none',
           userSelect: 'none',
           cursor: isDragging ? 'grabbing' : activeTool === 'select' ? 'grab' : 'default',
-          transform: `translate(${ball.x}px,${ball.y}px) scale(${isDragging ? 1.3 : 1})`,
-          transformOrigin: `${ball.x}px ${ball.y}px`,
-          transition: isDragging ? 'none' : 'transform 0.12s ease',
         }}
         onPointerDown={handleBallDown}
-        onClick={() => { /* ball has no edit modal */ }}
       >
         {/* Large hit area */}
         <circle r={4} fill="transparent" />
-        {/* Shadow */}
-        <ellipse cx={isDragging ? 0.5 : 0.3} cy={isDragging ? 2.4 : 1.5}
-          rx={isDragging ? 2.2 : 1.4} ry={isDragging ? 0.75 : 0.5}
-          fill="rgba(0,0,0,0.25)" />
-        {/* Ball body */}
-        <circle r={1.8} fill="white" stroke="#111" strokeWidth="0.25" />
-        <circle r={0.65} fill="#111" />
-        <line x1={0} y1={-1.8} x2={0} y2={-0.65} stroke="#111" strokeWidth={0.22} />
-        <line x1={0} y1={0.65} x2={0} y2={1.8} stroke="#111" strokeWidth={0.22} />
-        <line x1={-1.8} y1={0} x2={-0.65} y2={0} stroke="#111" strokeWidth={0.22} />
-        <line x1={0.65} y1={0} x2={1.8} y2={0} stroke="#111" strokeWidth={0.22} />
-        <line x1={-1.2} y1={-1.2} x2={-0.48} y2={-0.48} stroke="#111" strokeWidth={0.22} />
-        <line x1={1.2} y1={-1.2} x2={0.48} y2={-0.48} stroke="#111" strokeWidth={0.22} />
+        {/* Inner group: scale-only CSS transform centered at ball origin */}
+        <g style={{
+          transform: `scale(${isDragging ? 1.25 : 1})`,
+          transition: isDragging ? 'none' : 'transform 0.12s ease',
+        }}>
+          <ellipse cx={isDragging ? 0.5 : 0.3} cy={isDragging ? 2.4 : 1.5}
+            rx={isDragging ? 2.2 : 1.4} ry={isDragging ? 0.75 : 0.5}
+            fill="rgba(0,0,0,0.25)" />
+          <circle r={1.8} fill="white" stroke="#111" strokeWidth="0.25" />
+          <circle r={0.65} fill="#111" />
+          <line x1={0} y1={-1.8} x2={0} y2={-0.65} stroke="#111" strokeWidth={0.22} />
+          <line x1={0} y1={0.65} x2={0} y2={1.8} stroke="#111" strokeWidth={0.22} />
+          <line x1={-1.8} y1={0} x2={-0.65} y2={0} stroke="#111" strokeWidth={0.22} />
+          <line x1={0.65} y1={0} x2={1.8} y2={0} stroke="#111" strokeWidth={0.22} />
+          <line x1={-1.2} y1={-1.2} x2={-0.48} y2={-0.48} stroke="#111" strokeWidth={0.22} />
+          <line x1={1.2} y1={-1.2} x2={0.48} y2={-0.48} stroke="#111" strokeWidth={0.22} />
+        </g>
       </g>
     )
   }
