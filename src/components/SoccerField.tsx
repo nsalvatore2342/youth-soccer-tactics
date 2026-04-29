@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useRef, useState, useCallback, useEffect } from 'react'
+import React, { useRef, useState, useCallback } from 'react'
 import { Player, BallState, Drawing, OverlayState, Tool, Point, DrawingType } from '@/types'
 
 interface Props {
@@ -19,9 +19,9 @@ interface Props {
   animationNote: string | null
 }
 
-// Field: 68m wide × 105m tall in SVG units
-const W = 68
-const H = 105
+const W = 68   // field width in SVG units (metres)
+const H = 105  // field height in SVG units (metres)
+const DRAG_THRESHOLD = 2  // SVG units — below this = click, above = drag
 
 function arrowheadPoints(from: Point, to: Point, size = 1.5): string {
   const dx = to.x - from.x
@@ -43,57 +43,79 @@ export default function SoccerField({
   onDrawingErase, animationNote,
 }: Props) {
   const svgRef = useRef<SVGSVGElement>(null)
+
+  // dragging: which player/ball is currently being dragged
   const [dragging, setDragging] = useState<{ id: string; type: 'player' | 'ball' } | null>(null)
+
+  // currentDraw: in-progress drawing stroke
   const [currentDraw, setCurrentDraw] = useState<{ points: Point[]; type: DrawingType } | null>(null)
+
   const [hoveredDrawing, setHoveredDrawing] = useState<string | null>(null)
+
+  // FIX 3: track pointer-down position to distinguish click from drag
+  const dragStartPos = useRef<Point | null>(null)
+  const didDragRef = useRef(false)
+
+  // ── Coordinate conversion ────────────────────────────────────────────────────
 
   const getSVGCoords = useCallback((e: React.PointerEvent): Point => {
     const svg = svgRef.current!
     const pt = svg.createSVGPoint()
     pt.x = e.clientX
     pt.y = e.clientY
-    const inv = svg.getScreenCTM()!.inverse()
-    const sp = pt.matrixTransform(inv)
+    const sp = pt.matrixTransform(svg.getScreenCTM()!.inverse())
+    // Clamp to field bounds (not the viewBox padding — players stay on the pitch)
     return { x: Math.max(0, Math.min(W, sp.x)), y: Math.max(0, Math.min(H, sp.y)) }
   }, [])
+
+  // ── Pointer handlers ─────────────────────────────────────────────────────────
 
   const handlePlayerDown = useCallback((e: React.PointerEvent, id: string) => {
     if (activeTool !== 'select') return
     e.stopPropagation()
+    e.preventDefault()
+    // FIX 2: capture on the SVG so moves/ups are always received
     svgRef.current?.setPointerCapture(e.pointerId)
+    const startPt = getSVGCoords(e)
+    dragStartPos.current = startPt
+    didDragRef.current = false
     setDragging({ id, type: 'player' })
-  }, [activeTool])
+  }, [activeTool, getSVGCoords])
 
   const handleBallDown = useCallback((e: React.PointerEvent) => {
     if (activeTool !== 'select') return
     e.stopPropagation()
+    e.preventDefault()
     svgRef.current?.setPointerCapture(e.pointerId)
+    const startPt = getSVGCoords(e)
+    dragStartPos.current = startPt
+    didDragRef.current = false
     setDragging({ id: 'ball', type: 'ball' })
-  }, [activeTool])
+  }, [activeTool, getSVGCoords])
 
   const handleFieldDown = useCallback((e: React.PointerEvent) => {
     if (activeTool === 'select') return
     const pt = getSVGCoords(e)
     if (activeTool === 'cone') {
-      onDrawingAdd({
-        id: Date.now().toString(),
-        type: 'cone',
-        points: [pt],
-        color: drawingColor,
-        completed: true,
-      })
+      onDrawingAdd({ id: Date.now().toString(), type: 'cone', points: [pt], color: drawingColor, completed: true })
       return
     }
     svgRef.current?.setPointerCapture(e.pointerId)
-    const drawType: DrawingType = activeTool === 'zone' ? 'zone'
-      : activeTool === 'arrow' ? 'arrow'
-      : activeTool === 'dashed' ? 'dashed' : 'line'
+    const drawType: DrawingType =
+      activeTool === 'zone' ? 'zone' :
+      activeTool === 'arrow' ? 'arrow' :
+      activeTool === 'dashed' ? 'dashed' : 'line'
     setCurrentDraw({ points: [pt, pt], type: drawType })
   }, [activeTool, drawingColor, getSVGCoords, onDrawingAdd])
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
     const pt = getSVGCoords(e)
     if (dragging) {
+      // FIX 3: mark as a genuine drag once we exceed the threshold
+      if (!didDragRef.current && dragStartPos.current) {
+        const dist = Math.hypot(pt.x - dragStartPos.current.x, pt.y - dragStartPos.current.y)
+        if (dist > DRAG_THRESHOLD) didDragRef.current = true
+      }
       if (dragging.type === 'player') onPlayerMove(dragging.id, pt.x, pt.y)
       else onBallMove(pt.x, pt.y)
     } else if (currentDraw) {
@@ -104,10 +126,11 @@ export default function SoccerField({
   const handlePointerUp = useCallback((e: React.PointerEvent) => {
     svgRef.current?.releasePointerCapture(e.pointerId)
     setDragging(null)
+    dragStartPos.current = null
+
     if (currentDraw && currentDraw.points.length >= 2) {
       const [a, b] = currentDraw.points
-      const dist = Math.hypot(b.x - a.x, b.y - a.y)
-      if (dist > 1) {
+      if (Math.hypot(b.x - a.x, b.y - a.y) > 1) {
         onDrawingAdd({
           id: Date.now().toString(),
           type: currentDraw.type,
@@ -120,24 +143,23 @@ export default function SoccerField({
     setCurrentDraw(null)
   }, [currentDraw, drawingColor, onDrawingAdd])
 
+  // ── Render helpers ───────────────────────────────────────────────────────────
+
   const renderDrawing = (d: Drawing, isPreview = false) => {
-    const key = d.id
-    const opacity = isPreview ? 0.7 : 1
     const isHovered = hoveredDrawing === d.id && activeTool === 'eraser'
     const strokeWidth = isHovered ? 1.2 : 0.6
 
     if (d.type === 'cone') {
       const [p] = d.points
       return (
-        <g key={key} opacity={opacity}
+        <g key={d.id} opacity={isPreview ? 0.7 : 1}
           onPointerEnter={() => setHoveredDrawing(d.id)}
           onPointerLeave={() => setHoveredDrawing(null)}
           onClick={() => activeTool === 'eraser' && onDrawingErase(d.id)}
           style={{ cursor: activeTool === 'eraser' ? 'crosshair' : 'default' }}>
           <polygon
             points={`${p.x},${p.y - 1.8} ${p.x - 1.2},${p.y + 0.8} ${p.x + 1.2},${p.y + 0.8}`}
-            fill={isHovered ? '#ff4444' : d.color}
-            stroke="white" strokeWidth="0.15"
+            fill={isHovered ? '#ff4444' : d.color} stroke="white" strokeWidth="0.15"
           />
         </g>
       )
@@ -145,15 +167,13 @@ export default function SoccerField({
 
     if (d.type === 'zone') {
       const [a, b] = d.points
-      const x = Math.min(a.x, b.x)
-      const y = Math.min(a.y, b.y)
-      const w = Math.abs(b.x - a.x)
-      const h = Math.abs(b.y - a.y)
+      const x = Math.min(a.x, b.x), y = Math.min(a.y, b.y)
+      const w = Math.abs(b.x - a.x), h = Math.abs(b.y - a.y)
       return (
-        <rect key={key} x={x} y={y} width={w} height={h}
+        <rect key={d.id} x={x} y={y} width={w} height={h}
           fill={isHovered ? 'rgba(255,68,68,0.3)' : d.color}
           stroke={d.color.replace('rgba', 'rgb').split(',').slice(0, 3).join(',') + ')'}
-          strokeWidth="0.3" opacity={opacity}
+          strokeWidth="0.3" opacity={isPreview ? 0.7 : 1}
           onPointerEnter={() => setHoveredDrawing(d.id)}
           onPointerLeave={() => setHoveredDrawing(null)}
           onClick={() => activeTool === 'eraser' && onDrawingErase(d.id)}
@@ -163,23 +183,19 @@ export default function SoccerField({
     }
 
     const [a, b] = d.points
-    const isDashed = d.type === 'dashed'
     const color = isHovered ? '#ff4444' : d.color
-
     return (
-      <g key={key} opacity={opacity}
+      <g key={d.id} opacity={isPreview ? 0.7 : 1}
         onPointerEnter={() => setHoveredDrawing(d.id)}
         onPointerLeave={() => setHoveredDrawing(null)}
         onClick={() => activeTool === 'eraser' && onDrawingErase(d.id)}
         style={{ cursor: activeTool === 'eraser' ? 'crosshair' : 'default' }}>
         <line x1={a.x} y1={a.y} x2={b.x} y2={b.y}
           stroke={color} strokeWidth={strokeWidth}
-          strokeDasharray={isDashed ? '2 1.2' : undefined}
+          strokeDasharray={d.type === 'dashed' ? '2 1.2' : undefined}
           strokeLinecap="round"
         />
-        {d.type === 'arrow' && (
-          <polygon points={arrowheadPoints(a, b)} fill={color} />
-        )}
+        {d.type === 'arrow' && <polygon points={arrowheadPoints(a, b)} fill={color} />}
       </g>
     )
   }
@@ -187,56 +203,107 @@ export default function SoccerField({
   const renderPlayer = (p: Player) => {
     if (p.team === 'away' && !showAwayTeam) return null
     const isHome = p.team === 'home'
-    const r = 2.4
+    const isDragging = dragging?.id === p.id
+    const r = 2.8  // visible radius
+
     return (
-      <g key={p.id} transform={`translate(${p.x},${p.y})`}
+      <g
+        key={p.id}
+        transform={`translate(${p.x},${p.y})`}
+        // FIX 6: disable pointer events when a drawing tool is active so strokes pass through
+        style={{
+          pointerEvents: activeTool === 'select' ? 'all' : 'none',
+          touchAction: 'none',
+          userSelect: 'none',
+          // FIX 4: scale up smoothly when dragging for clear visual "lift" feedback
+          transform: `translate(${p.x}px,${p.y}px) scale(${isDragging ? 1.3 : 1})`,
+          transformOrigin: `${p.x}px ${p.y}px`,
+          transition: isDragging ? 'none' : 'transform 0.12s ease',
+          // FIX 5: grabbing cursor while dragging
+          cursor: isDragging ? 'grabbing' : activeTool === 'select' ? 'grab' : 'default',
+        }}
         onPointerDown={(e) => handlePlayerDown(e, p.id)}
-        onClick={() => activeTool === 'select' && onPlayerClick(p.id)}
-        style={{ cursor: activeTool === 'select' ? 'grab' : 'default', touchAction: 'none', userSelect: 'none' }}>
-        {/* Shadow */}
-        <ellipse cx={0.3} cy={r * 0.8} rx={r * 0.9} ry={r * 0.35} fill="rgba(0,0,0,0.2)" />
-        {/* Player circle */}
-        <circle r={r} fill={p.color}
-          stroke={isHome ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.6)'}
-          strokeWidth={isHome ? 0.5 : 0.3}
+        // FIX 3: only open edit modal if the pointer barely moved (click, not drag)
+        onClick={() => {
+          if (activeTool === 'select' && !didDragRef.current) onPlayerClick(p.id)
+        }}
+      >
+        {/* FIX 2: large invisible hit area — 2× the visible circle — makes it easy to grab */}
+        <circle r={r * 2} fill="transparent" />
+
+        {/* Dropped shadow — larger + darker while dragging */}
+        <ellipse
+          cx={isDragging ? 0.6 : 0.3}
+          cy={isDragging ? r * 1.4 : r * 0.8}
+          rx={isDragging ? r * 1.3 : r * 0.9}
+          ry={isDragging ? r * 0.55 : r * 0.35}
+          fill={isDragging ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.2)'}
         />
+
+        {/* Player circle */}
+        <circle r={r}
+          fill={p.color}
+          stroke={isDragging ? 'rgba(255,255,255,1)' : isHome ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.6)'}
+          strokeWidth={isDragging ? 0.7 : isHome ? 0.5 : 0.3}
+        />
+
         {/* Jersey number */}
-        <text textAnchor="middle" dominantBaseline="central"
-          fontSize={p.number >= 10 ? 2.2 : 2.6}
+        <text
+          textAnchor="middle" dominantBaseline="central"
+          fontSize={p.number >= 10 ? 2.4 : 2.8}
           fontWeight="bold" fill={p.textColor}
           fontFamily="system-ui, sans-serif"
           style={{ pointerEvents: 'none' }}>
           {p.number}
         </text>
-        {/* Team indicator dot for away */}
+
+        {/* Away team indicator dot */}
         {!isHome && (
-          <circle cx={r * 0.65} cy={-r * 0.65} r={0.6}
+          <circle cx={r * 0.65} cy={-r * 0.65} r={0.65}
             fill="white" stroke={p.color} strokeWidth="0.15" />
         )}
       </g>
     )
   }
 
-  const renderBall = () => (
-    <g transform={`translate(${ball.x},${ball.y})`}
-      onPointerDown={handleBallDown}
-      style={{ cursor: activeTool === 'select' ? 'grab' : 'default', touchAction: 'none', userSelect: 'none' }}>
-      <ellipse cx={0.3} cy={1.5} rx={1.4} ry={0.5} fill="rgba(0,0,0,0.2)" />
-      <circle r={1.6} fill="white" stroke="#111" strokeWidth="0.25" />
-      {/* Pentagon pattern */}
-      <circle r={0.6} fill="#111" />
-      <line x1={0} y1={-1.6} x2={0} y2={-0.6} stroke="#111" strokeWidth={0.22} />
-      <line x1={0} y1={0.6} x2={0} y2={1.6} stroke="#111" strokeWidth={0.22} />
-      <line x1={-1.6} y1={0} x2={-0.6} y2={0} stroke="#111" strokeWidth={0.22} />
-      <line x1={0.6} y1={0} x2={1.6} y2={0} stroke="#111" strokeWidth={0.22} />
-      <line x1={-1.1} y1={-1.1} x2={-0.45} y2={-0.45} stroke="#111" strokeWidth={0.22} />
-      <line x1={1.1} y1={-1.1} x2={0.45} y2={-0.45} stroke="#111" strokeWidth={0.22} />
-    </g>
-  )
+  const renderBall = () => {
+    const isDragging = dragging?.type === 'ball'
+    return (
+      <g
+        transform={`translate(${ball.x},${ball.y})`}
+        style={{
+          pointerEvents: activeTool === 'select' ? 'all' : 'none',
+          touchAction: 'none',
+          userSelect: 'none',
+          cursor: isDragging ? 'grabbing' : activeTool === 'select' ? 'grab' : 'default',
+          transform: `translate(${ball.x}px,${ball.y}px) scale(${isDragging ? 1.3 : 1})`,
+          transformOrigin: `${ball.x}px ${ball.y}px`,
+          transition: isDragging ? 'none' : 'transform 0.12s ease',
+        }}
+        onPointerDown={handleBallDown}
+        onClick={() => { /* ball has no edit modal */ }}
+      >
+        {/* Large hit area */}
+        <circle r={4} fill="transparent" />
+        {/* Shadow */}
+        <ellipse cx={isDragging ? 0.5 : 0.3} cy={isDragging ? 2.4 : 1.5}
+          rx={isDragging ? 2.2 : 1.4} ry={isDragging ? 0.75 : 0.5}
+          fill="rgba(0,0,0,0.25)" />
+        {/* Ball body */}
+        <circle r={1.8} fill="white" stroke="#111" strokeWidth="0.25" />
+        <circle r={0.65} fill="#111" />
+        <line x1={0} y1={-1.8} x2={0} y2={-0.65} stroke="#111" strokeWidth={0.22} />
+        <line x1={0} y1={0.65} x2={0} y2={1.8} stroke="#111" strokeWidth={0.22} />
+        <line x1={-1.8} y1={0} x2={-0.65} y2={0} stroke="#111" strokeWidth={0.22} />
+        <line x1={0.65} y1={0} x2={1.8} y2={0} stroke="#111" strokeWidth={0.22} />
+        <line x1={-1.2} y1={-1.2} x2={-0.48} y2={-0.48} stroke="#111" strokeWidth={0.22} />
+        <line x1={1.2} y1={-1.2} x2={0.48} y2={-0.48} stroke="#111" strokeWidth={0.22} />
+      </g>
+    )
+  }
 
   const renderOverlays = () => (
-    <g>
-      {/* Danger zone — red semi-transparent near home goal */}
+    <g style={{ pointerEvents: 'none' }}>
       {overlays.dangerZone && (
         <g>
           <rect x={13.84} y={78} width={40.32} height={27} fill="rgba(239,68,68,0.18)" />
@@ -246,55 +313,40 @@ export default function SoccerField({
           </text>
         </g>
       )}
-      {/* Safe clearing zones — green wide channels */}
       {overlays.clearingZones && (
         <g>
           <rect x={0} y={52.5} width={10} height={52.5} fill="rgba(34,197,94,0.2)" />
           <rect x={58} y={52.5} width={10} height={52.5} fill="rgba(34,197,94,0.2)" />
           <text x={5} y={72} textAnchor="middle" fontSize={2} fill="rgba(34,197,94,0.9)"
-            fontWeight="bold" fontFamily="system-ui" transform="rotate(-90,5,72)">
-            CLEAR WIDE
-          </text>
+            fontWeight="bold" fontFamily="system-ui" transform="rotate(-90,5,72)">CLEAR WIDE</text>
           <text x={63} y={72} textAnchor="middle" fontSize={2} fill="rgba(34,197,94,0.9)"
-            fontWeight="bold" fontFamily="system-ui" transform="rotate(90,63,72)">
-            CLEAR WIDE
-          </text>
+            fontWeight="bold" fontFamily="system-ui" transform="rotate(90,63,72)">CLEAR WIDE</text>
         </g>
       )}
-      {/* Build-out zone — blue lower third */}
       {overlays.buildOutZone && (
         <g>
           <rect x={0} y={70} width={68} height={35} fill="rgba(59,130,246,0.12)"
             stroke="rgba(59,130,246,0.5)" strokeWidth="0.4" strokeDasharray="3 1.5" />
           <text x={34} y={76} textAnchor="middle" fontSize={2.5}
-            fill="rgba(59,130,246,0.9)" fontWeight="bold" fontFamily="system-ui">
-            BUILD-OUT ZONE
-          </text>
+            fill="rgba(59,130,246,0.9)" fontWeight="bold" fontFamily="system-ui">BUILD-OUT ZONE</text>
         </g>
       )}
-      {/* Attacking zone — yellow top third */}
       {overlays.attackingZone && (
         <g>
           <rect x={0} y={0} width={68} height={35} fill="rgba(234,179,8,0.12)"
             stroke="rgba(234,179,8,0.5)" strokeWidth="0.4" strokeDasharray="3 1.5" />
           <text x={34} y={8} textAnchor="middle" fontSize={2.5}
-            fill="rgba(234,179,8,0.9)" fontWeight="bold" fontFamily="system-ui">
-            ⭐ ATTACKING ZONE
-          </text>
+            fill="rgba(234,179,8,0.9)" fontWeight="bold" fontFamily="system-ui">⭐ ATTACKING ZONE</text>
         </g>
       )}
-      {/* No-clear-middle zone */}
       {overlays.noClearMiddle && (
         <g>
           <rect x={20} y={75} width={28} height={30} fill="rgba(239,68,68,0.2)"
             stroke="rgba(239,68,68,0.7)" strokeWidth="0.4" strokeDasharray="2 1" />
           <text x={34} y={91} textAnchor="middle" fontSize={2.2}
-            fill="rgba(239,68,68,1)" fontWeight="bold" fontFamily="system-ui">
-            🚫 NO CLEAR MIDDLE
-          </text>
+            fill="rgba(239,68,68,1)" fontWeight="bold" fontFamily="system-ui">🚫 NO CLEAR MIDDLE</text>
         </g>
       )}
-      {/* Passing lanes */}
       {overlays.passingLanes && (
         <g opacity={0.6}>
           {[20, 34, 48].map((x) => (
@@ -305,7 +357,6 @@ export default function SoccerField({
             fill="rgba(168,85,247,0.9)" fontFamily="system-ui">PASSING LANES</text>
         </g>
       )}
-      {/* Width guide */}
       {overlays.widthGuide && (
         <g opacity={0.6}>
           <line x1={8} y1={0} x2={8} y2={105} stroke="rgba(255,255,255,0.4)" strokeWidth="0.5" strokeDasharray="2 2" />
@@ -316,16 +367,13 @@ export default function SoccerField({
             fontFamily="system-ui" transform="rotate(90,60,52.5)">WIDTH GUIDE</text>
         </g>
       )}
-      {/* Target ball area — orange zone in front of away goal */}
       {ball.showTarget && (
         <g>
           <rect x={18} y={5} width={32} height={18} rx={2}
             fill="rgba(249,115,22,0.2)" stroke="rgba(249,115,22,0.7)"
             strokeWidth="0.5" strokeDasharray="2 1" />
           <text x={34} y={12} textAnchor="middle" fontSize={2.2}
-            fill="rgba(249,115,22,1)" fontWeight="bold" fontFamily="system-ui">
-            🎯 TARGET AREA
-          </text>
+            fill="rgba(249,115,22,1)" fontWeight="bold" fontFamily="system-ui">🎯 TARGET AREA</text>
         </g>
       )}
     </g>
@@ -340,69 +388,74 @@ export default function SoccerField({
         viewBox={`-2.44 -2.44 ${W + 4.88} ${H + 4.88}`}
         preserveAspectRatio="xMidYMid meet"
         className="w-full h-full select-none"
-        style={{ touchAction: 'none', maxHeight: '100%', maxWidth: '100%' }}
+        style={{
+          touchAction: 'none',
+          maxHeight: '100%',
+          maxWidth: '100%',
+          // FIX 5: show grabbing cursor on the whole SVG while actively dragging
+          cursor: dragging ? 'grabbing' : undefined,
+        }}
         onPointerDown={handleFieldDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
-        onPointerLeave={handlePointerUp}
+        // FIX 1: removed onPointerLeave — pointer capture keeps events routed here even
+        // when the pointer exits the SVG, so we must NOT prematurely end the drag here.
       >
-        {/* ── Grass stripes ── */}
+        {/* Grass stripes */}
         {Array.from({ length: 21 }).map((_, i) => (
           <rect key={i} x={0} y={i * 5} width={W} height={5}
             fill={i % 2 === 0 ? '#2d8a2d' : '#267a26'} />
         ))}
 
-        {/* ── Goals (gray boxes outside field) ── */}
-        <rect x={30.34} y={-2.44} width={7.32} height={2.44}
-          fill="#888" stroke="white" strokeWidth={0.4} />
-        <rect x={30.34} y={H} width={7.32} height={2.44}
-          fill="#888" stroke="white" strokeWidth={0.4} />
+        {/* Goals */}
+        <rect x={30.34} y={-2.44} width={7.32} height={2.44} fill="#888" stroke="white" strokeWidth={0.4} />
+        <rect x={30.34} y={H}      width={7.32} height={2.44} fill="#888" stroke="white" strokeWidth={0.4} />
 
-        {/* ── Field outline ── */}
+        {/* Field outline */}
         <rect x={0} y={0} width={W} height={H} {...fieldLineStyle} />
 
-        {/* ── Halfway line ── */}
+        {/* Halfway line */}
         <line x1={0} y1={H / 2} x2={W} y2={H / 2} {...fieldLineStyle} />
 
-        {/* ── Center circle ── */}
+        {/* Center circle + spot */}
         <circle cx={W / 2} cy={H / 2} r={9.15} {...fieldLineStyle} />
         <circle cx={W / 2} cy={H / 2} r={0.5} fill="white" />
 
-        {/* ── Penalty areas ── */}
-        <rect x={13.84} y={0} width={40.32} height={16.5} {...fieldLineStyle} />
-        <rect x={13.84} y={H - 16.5} width={40.32} height={16.5} {...fieldLineStyle} />
+        {/* Penalty areas */}
+        <rect x={13.84} y={0}          width={40.32} height={16.5} {...fieldLineStyle} />
+        <rect x={13.84} y={H - 16.5}   width={40.32} height={16.5} {...fieldLineStyle} />
 
-        {/* ── Goal areas (6-yard boxes) ── */}
-        <rect x={24.84} y={0} width={18.32} height={5.5} {...fieldLineStyle} />
+        {/* Goal areas */}
+        <rect x={24.84} y={0}       width={18.32} height={5.5} {...fieldLineStyle} />
         <rect x={24.84} y={H - 5.5} width={18.32} height={5.5} {...fieldLineStyle} />
 
-        {/* ── Penalty spots ── */}
-        <circle cx={W / 2} cy={11} r={0.5} fill="white" />
+        {/* Penalty spots */}
+        <circle cx={W / 2} cy={11}      r={0.5} fill="white" />
         <circle cx={W / 2} cy={H - 11} r={0.5} fill="white" />
 
-        {/* ── Penalty arcs ── */}
+        {/* Penalty arcs */}
         <path d={`M ${W / 2 - 9.5} 16.5 A 9.15 9.15 0 0 0 ${W / 2 + 9.5} 16.5`} {...fieldLineStyle} />
         <path d={`M ${W / 2 - 9.5} ${H - 16.5} A 9.15 9.15 0 0 1 ${W / 2 + 9.5} ${H - 16.5}`} {...fieldLineStyle} />
 
-        {/* ── Corner arcs ── */}
-        <path d="M 0 1 A 1 1 0 0 0 1 0" {...fieldLineStyle} />
-        <path d="M 67 0 A 1 1 0 0 0 68 1" {...fieldLineStyle} />
-        <path d="M 0 104 A 1 1 0 0 1 1 105" {...fieldLineStyle} />
-        <path d="M 67 105 A 1 1 0 0 1 68 104" {...fieldLineStyle} />
+        {/* Corner arcs */}
+        <path d="M 0 1 A 1 1 0 0 0 1 0"       {...fieldLineStyle} />
+        <path d="M 67 0 A 1 1 0 0 0 68 1"      {...fieldLineStyle} />
+        <path d="M 0 104 A 1 1 0 0 1 1 105"    {...fieldLineStyle} />
+        <path d="M 67 105 A 1 1 0 0 1 68 104"  {...fieldLineStyle} />
 
-        {/* ── Team labels ── */}
+        {/* Team labels */}
         <text x={W / 2} y={H - 1.2} textAnchor="middle" fontSize={2.5}
-          fill="rgba(255,255,255,0.4)" fontFamily="system-ui">HOME</text>
+          fill="rgba(255,255,255,0.4)" fontFamily="system-ui" style={{ pointerEvents: 'none' }}>HOME</text>
         <text x={W / 2} y={2.8} textAnchor="middle" fontSize={2.5}
-          fill="rgba(255,255,255,0.4)" fontFamily="system-ui">AWAY</text>
+          fill="rgba(255,255,255,0.4)" fontFamily="system-ui" style={{ pointerEvents: 'none' }}>AWAY</text>
 
-        {/* ── Overlays ── */}
+        {/* Overlays */}
         {renderOverlays()}
 
-        {/* ── Completed drawings ── */}
+        {/* Completed drawings */}
         {drawings.map((d) => renderDrawing(d))}
 
-        {/* ── Preview drawing ── */}
+        {/* Preview drawing */}
         {currentDraw && renderDrawing({
           id: '__preview__',
           type: currentDraw.type,
@@ -411,14 +464,14 @@ export default function SoccerField({
           completed: false,
         }, true)}
 
-        {/* ── Ball ── */}
+        {/* Ball */}
         {renderBall()}
 
-        {/* ── Players ── */}
+        {/* Players — rendered last so they sit on top */}
         {players.map(renderPlayer)}
       </svg>
 
-      {/* Animation step note overlay */}
+      {/* Animation step note */}
       {animationNote && (
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/80 text-white
           text-sm px-4 py-2 rounded-full max-w-xs text-center pointer-events-none z-10 border border-yellow-400">
