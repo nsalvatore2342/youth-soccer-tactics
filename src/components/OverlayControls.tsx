@@ -14,7 +14,7 @@ interface Props {
 const OVERLAYS: { key: keyof OverlayState; label: string; icon: string; desc: string; color: string }[] = [
   { key: 'dangerZone', label: 'Danger Zone', icon: '⚠', desc: 'Red zone near your goal — avoid turning the ball over here!', color: 'text-red-400' },
   { key: 'clearingZones', label: 'Clear Wide Zones', icon: '↗', desc: 'Green channels on the sides — safest areas to clear the ball', color: 'text-green-400' },
-  { key: 'buildOutZone', label: 'Build-Out Zone', icon: '🏗', desc: 'Blue defensive third — build attacks from here calmly', color: 'text-blue-400' },
+  { key: 'buildOutZone', label: 'Build-Out Lines', icon: '📏', desc: 'Dashed blue lines across the field — opponents must retreat behind their line when GK has the ball (U9–U12 rule)', color: 'text-blue-400' },
   { key: 'attackingZone', label: 'Attacking Zone', icon: '⭐', desc: 'Yellow top third — get the ball here to score!', color: 'text-yellow-400' },
   { key: 'noClearMiddle', label: 'No Clear Middle', icon: '🚫', desc: 'Never clear across your own goal mouth — ever!', color: 'text-red-300' },
   { key: 'passingLanes', label: 'Passing Lanes', icon: '↕', desc: 'Vertical channels for passing through the thirds', color: 'text-purple-400' },

@@ -332,10 +332,35 @@ export default function SoccerField({
       )}
       {overlays.buildOutZone && (
         <g>
-          <rect x={0} y={70} width={68} height={35} fill="rgba(59,130,246,0.12)"
-            stroke="rgba(59,130,246,0.5)" strokeWidth="0.4" strokeDasharray="3 1.5" />
-          <text x={34} y={76} textAnchor="middle" fontSize={2.5}
-            fill="rgba(59,130,246,0.9)" fontWeight="bold" fontFamily="system-ui">BUILD-OUT ZONE</text>
+          {/* Shaded build-out zones — defensive thirds where GK plays out */}
+          <rect x={0} y={0}  width={68} height={35} fill="rgba(59,130,246,0.08)" />
+          <rect x={0} y={70} width={68} height={35} fill="rgba(59,130,246,0.08)" />
+
+          {/* Away build-out line (y=35) */}
+          <line x1={0} y1={35} x2={68} y2={35}
+            stroke="rgba(99,179,237,0.95)" strokeWidth="0.7" strokeDasharray="4 2" />
+          {/* Tick marks at ends */}
+          <line x1={0}  y1={33} x2={0}  y2={37} stroke="rgba(99,179,237,0.95)" strokeWidth="0.5" />
+          <line x1={68} y1={33} x2={68} y2={37} stroke="rgba(99,179,237,0.95)" strokeWidth="0.5" />
+          {/* Away build-out label */}
+          <rect x={18} y={31.8} width={32} height={5.5} rx={0.8} fill="rgba(30,64,175,0.75)" />
+          <text x={34} y={33.8} textAnchor="middle" fontSize={1.9}
+            fill="white" fontWeight="bold" fontFamily="system-ui">BUILD-OUT LINE</text>
+          <text x={34} y={36.2} textAnchor="middle" fontSize={1.5}
+            fill="rgba(147,197,253,0.9)" fontFamily="system-ui">Opp. retreat when GK has ball</text>
+
+          {/* Home build-out line (y=70) */}
+          <line x1={0} y1={70} x2={68} y2={70}
+            stroke="rgba(99,179,237,0.95)" strokeWidth="0.7" strokeDasharray="4 2" />
+          {/* Tick marks at ends */}
+          <line x1={0}  y1={68} x2={0}  y2={72} stroke="rgba(99,179,237,0.95)" strokeWidth="0.5" />
+          <line x1={68} y1={68} x2={68} y2={72} stroke="rgba(99,179,237,0.95)" strokeWidth="0.5" />
+          {/* Home build-out label */}
+          <rect x={18} y={68} width={32} height={5.5} rx={0.8} fill="rgba(30,64,175,0.75)" />
+          <text x={34} y={70} textAnchor="middle" fontSize={1.9}
+            fill="white" fontWeight="bold" fontFamily="system-ui">BUILD-OUT LINE</text>
+          <text x={34} y={72.4} textAnchor="middle" fontSize={1.5}
+            fill="rgba(147,197,253,0.9)" fontFamily="system-ui">Opp. retreat when GK has ball</text>
         </g>
       )}
       {overlays.attackingZone && (
