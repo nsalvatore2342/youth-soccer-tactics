@@ -533,6 +533,8 @@ export default function Home() {
           onNextStep={handleNextStep}
           onPrevStep={handlePrevStep}
           hasPattern={activePattern !== null}
+          overlays={overlays}
+          onOverlayToggle={handleOverlayToggle}
         />
       </div>
 

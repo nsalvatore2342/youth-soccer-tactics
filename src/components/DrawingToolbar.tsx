@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Tool } from '@/types'
+import { Tool, OverlayState } from '@/types'
 
 interface Props {
   activeTool: Tool
@@ -20,6 +20,8 @@ interface Props {
   onNextStep: () => void
   onPrevStep: () => void
   hasPattern: boolean
+  overlays: OverlayState
+  onOverlayToggle: (key: keyof OverlayState) => void
 }
 
 const TOOLS: { id: Tool; icon: string; label: string }[] = [
@@ -41,7 +43,11 @@ export default function DrawingToolbar({
   activeTool, drawingColor, isAnimating, animationStep, totalSteps,
   onToolChange, onColorChange, onClearDrawings, onUndo, onResetAll,
   onPlay, onPause, onStop, onNextStep, onPrevStep, hasPattern,
+  overlays, onOverlayToggle,
 }: Props) {
+  const defendActive = overlays.dangerZone || overlays.noClearMiddle || overlays.clearingZones
+  const buildOutActive = overlays.buildOutZone || overlays.passingLanes || overlays.widthGuide
+  const attackActive = overlays.attackingZone || overlays.widthGuide
   return (
     <div className="flex flex-wrap items-center gap-1.5 px-2 py-1.5 bg-gray-900 border-b border-gray-700">
       {/* Tool buttons */}
@@ -92,6 +98,39 @@ export default function DrawingToolbar({
           title="Custom color"
         />
       </div>
+
+      <div className="w-px h-6 bg-gray-600 mx-0.5" />
+
+      {/* Quick teach presets */}
+      <button
+        onClick={() => {
+          if (!overlays.dangerZone) onOverlayToggle('dangerZone')
+          if (!overlays.noClearMiddle) onOverlayToggle('noClearMiddle')
+          if (!overlays.clearingZones) onOverlayToggle('clearingZones')
+        }}
+        className={`px-2.5 py-1.5 rounded text-xs font-bold transition-all
+          ${defendActive ? 'bg-red-700 text-white ring-2 ring-red-400' : 'bg-red-900/60 text-red-200 hover:bg-red-900'}`}>
+        🛡 Defend
+      </button>
+      <button
+        onClick={() => {
+          if (!overlays.buildOutZone) onOverlayToggle('buildOutZone')
+          if (!overlays.passingLanes) onOverlayToggle('passingLanes')
+          if (!overlays.widthGuide) onOverlayToggle('widthGuide')
+        }}
+        className={`px-2.5 py-1.5 rounded text-xs font-bold transition-all
+          ${buildOutActive ? 'bg-blue-700 text-white ring-2 ring-blue-400' : 'bg-blue-900/60 text-blue-200 hover:bg-blue-900'}`}>
+        📏 Build-Out
+      </button>
+      <button
+        onClick={() => {
+          if (!overlays.attackingZone) onOverlayToggle('attackingZone')
+          if (!overlays.widthGuide) onOverlayToggle('widthGuide')
+        }}
+        className={`px-2.5 py-1.5 rounded text-xs font-bold transition-all
+          ${attackActive ? 'bg-yellow-600 text-white ring-2 ring-yellow-400' : 'bg-yellow-900/60 text-yellow-200 hover:bg-yellow-900'}`}>
+        ⭐ Attack
+      </button>
 
       <div className="w-px h-6 bg-gray-600 mx-0.5" />
 
