@@ -332,35 +332,39 @@ export default function SoccerField({
       )}
       {overlays.buildOutZone && (
         <g>
-          {/* Shaded build-out zones */}
-          <rect x={0} y={0}  width={68} height={35} fill="rgba(59,130,246,0.1)" />
-          <rect x={0} y={70} width={68} height={35} fill="rgba(59,130,246,0.1)" />
-
-          {/* Away build-out line (y=35) — glow + main line */}
+          {/* Away build-out line (y=35) */}
           <line x1={0} y1={35} x2={68} y2={35}
             stroke="#93c5fd" strokeWidth="2.5" strokeDasharray="4 2" opacity={0.3} />
           <line x1={0} y1={35} x2={68} y2={35}
             stroke="#93c5fd" strokeWidth="1.2" strokeDasharray="4 2" />
-          <line x1={0}  y1={33} x2={0}  y2={37} stroke="#93c5fd" strokeWidth="0.8" />
-          <line x1={68} y1={33} x2={68} y2={37} stroke="#93c5fd" strokeWidth="0.8" />
           <rect x={18} y={31.8} width={32} height={5.5} rx={0.8} fill="rgba(30,64,175,0.85)" />
           <text x={34} y={33.8} textAnchor="middle" fontSize={1.9}
             fill="white" fontWeight="bold" fontFamily="system-ui">BUILD-OUT LINE</text>
           <text x={34} y={36.2} textAnchor="middle" fontSize={1.5}
             fill="rgba(147,197,253,0.9)" fontFamily="system-ui">Opp. retreat when GK has ball</text>
 
-          {/* Home build-out line (y=70) — glow + main line */}
+          {/* Home build-out line (y=70) */}
           <line x1={0} y1={70} x2={68} y2={70}
             stroke="#93c5fd" strokeWidth="2.5" strokeDasharray="4 2" opacity={0.3} />
           <line x1={0} y1={70} x2={68} y2={70}
             stroke="#93c5fd" strokeWidth="1.2" strokeDasharray="4 2" />
-          <line x1={0}  y1={68} x2={0}  y2={72} stroke="#93c5fd" strokeWidth="0.8" />
-          <line x1={68} y1={68} x2={68} y2={72} stroke="#93c5fd" strokeWidth="0.8" />
-          <rect x={18} y={68} width={32} height={5.5} rx={0.8} fill="rgba(30,64,175,0.85)" />
-          <text x={34} y={70} textAnchor="middle" fontSize={1.9}
+          <rect x={18} y={66.5} width={32} height={5.5} rx={0.8} fill="rgba(30,64,175,0.85)" />
+          <text x={34} y={68.5} textAnchor="middle" fontSize={1.9}
             fill="white" fontWeight="bold" fontFamily="system-ui">BUILD-OUT LINE</text>
-          <text x={34} y={72.4} textAnchor="middle" fontSize={1.5}
+          <text x={34} y={70.9} textAnchor="middle" fontSize={1.5}
             fill="rgba(147,197,253,0.9)" fontFamily="system-ui">Opp. retreat when GK has ball</text>
+        </g>
+      )}
+      {overlays.thirds && (
+        <g>
+          <line x1={0} y1={35} x2={68} y2={35} stroke="rgba(255,255,255,0.5)" strokeWidth="0.8" strokeDasharray="3 2" />
+          <line x1={0} y1={70} x2={68} y2={70} stroke="rgba(255,255,255,0.5)" strokeWidth="0.8" strokeDasharray="3 2" />
+          <text x={34} y={18} textAnchor="middle" fontSize={2.2}
+            fill="rgba(255,255,255,0.4)" fontWeight="bold" fontFamily="system-ui">ATTACKING THIRD</text>
+          <text x={34} y={52.5} textAnchor="middle" fontSize={2.2}
+            fill="rgba(255,255,255,0.4)" fontWeight="bold" fontFamily="system-ui">MIDDLE THIRD</text>
+          <text x={34} y={88} textAnchor="middle" fontSize={2.2}
+            fill="rgba(255,255,255,0.4)" fontWeight="bold" fontFamily="system-ui">DEFENSIVE THIRD</text>
         </g>
       )}
       {overlays.attackingZone && (

@@ -148,6 +148,12 @@ export default function DrawingToolbar({
           ${attackActive ? 'bg-yellow-600 text-white ring-2 ring-yellow-400' : 'bg-yellow-900/60 text-yellow-200 hover:bg-yellow-900'}`}>
         ⭐ Attack
       </button>
+      <button
+        onClick={() => onOverlayToggle('thirds')}
+        className={`px-2.5 py-1.5 rounded text-xs font-bold transition-all
+          ${overlays.thirds ? 'bg-gray-500 text-white ring-2 ring-gray-300' : 'bg-gray-700/80 text-gray-300 hover:bg-gray-600'}`}>
+        ⅓ Thirds
+      </button>
 
       <div className="w-px h-6 bg-gray-600 mx-0.5" />
 

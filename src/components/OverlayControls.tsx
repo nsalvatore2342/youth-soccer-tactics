@@ -19,6 +19,7 @@ const OVERLAYS: { key: keyof OverlayState; label: string; icon: string; desc: st
   { key: 'noClearMiddle', label: 'No Clear Middle', icon: '🚫', desc: 'Never clear across your own goal mouth — ever!', color: 'text-red-300' },
   { key: 'passingLanes', label: 'Passing Lanes', icon: '↕', desc: 'Vertical channels for passing through the thirds', color: 'text-purple-400' },
   { key: 'widthGuide', label: 'Width Guide', icon: '↔', desc: 'Lines showing ideal width positioning', color: 'text-gray-300' },
+  { key: 'thirds', label: 'Field Thirds', icon: '⅓', desc: 'Divides the field into attacking, middle, and defensive thirds', color: 'text-gray-400' },
 ]
 
 function ToggleSwitch({ on, onToggle }: { on: boolean; onToggle: () => void }) {

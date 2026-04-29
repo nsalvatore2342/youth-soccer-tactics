@@ -41,6 +41,7 @@ export interface OverlayState {
   noClearMiddle: boolean
   passingLanes: boolean
   widthGuide: boolean
+  thirds: boolean
 }
 
 export interface Formation {

@@ -73,6 +73,7 @@ const DEFAULT_OVERLAYS: OverlayState = {
   noClearMiddle: false,
   passingLanes: false,
   widthGuide: false,
+  thirds: false,
 }
 
 const LS_KEY = 'soccer-tactics-v1'
