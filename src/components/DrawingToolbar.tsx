@@ -60,7 +60,7 @@ export default function DrawingToolbar({
             title={t.label}
             onClick={() => onToolChange(t.id)}
             className={`rounded font-bold transition-all select-none flex items-center gap-1
-              ${isSelect ? 'px-3 py-1.5 text-base' : 'px-2.5 py-1.5 text-sm'}
+              ${isSelect ? 'px-3 py-2 text-base' : 'px-2.5 py-2 text-sm'}
               ${isActive
                 ? isSelect
                   ? 'bg-green-500 text-white shadow-lg shadow-green-500/40 ring-2 ring-green-300'
@@ -99,61 +99,62 @@ export default function DrawingToolbar({
         />
       </div>
 
-      <div className="w-px h-6 bg-gray-600 mx-0.5" />
-
-      {/* Quick teach presets — click to toggle on, click again to turn all off */}
-      <button
-        onClick={() => {
-          if (defendActive) {
-            if (overlays.dangerZone) onOverlayToggle('dangerZone')
-            if (overlays.noClearMiddle) onOverlayToggle('noClearMiddle')
-            if (overlays.clearingZones) onOverlayToggle('clearingZones')
-          } else {
-            if (!overlays.dangerZone) onOverlayToggle('dangerZone')
-            if (!overlays.noClearMiddle) onOverlayToggle('noClearMiddle')
-            if (!overlays.clearingZones) onOverlayToggle('clearingZones')
-          }
-        }}
-        className={`px-2.5 py-1.5 rounded text-xs font-bold transition-all
-          ${defendActive ? 'bg-red-700 text-white ring-2 ring-red-400' : 'bg-red-900/60 text-red-200 hover:bg-red-900'}`}>
-        🛡 Defend
-      </button>
-      <button
-        onClick={() => {
-          if (buildOutActive) {
-            if (overlays.buildOutZone) onOverlayToggle('buildOutZone')
-            if (overlays.passingLanes) onOverlayToggle('passingLanes')
-            if (overlays.widthGuide) onOverlayToggle('widthGuide')
-          } else {
-            if (!overlays.buildOutZone) onOverlayToggle('buildOutZone')
-            if (!overlays.passingLanes) onOverlayToggle('passingLanes')
-            if (!overlays.widthGuide) onOverlayToggle('widthGuide')
-          }
-        }}
-        className={`px-2.5 py-1.5 rounded text-xs font-bold transition-all
-          ${buildOutActive ? 'bg-blue-700 text-white ring-2 ring-blue-400' : 'bg-blue-900/60 text-blue-200 hover:bg-blue-900'}`}>
-        📏 Build-Out
-      </button>
-      <button
-        onClick={() => {
-          if (attackActive) {
-            if (overlays.attackingZone) onOverlayToggle('attackingZone')
-            if (overlays.widthGuide) onOverlayToggle('widthGuide')
-          } else {
-            if (!overlays.attackingZone) onOverlayToggle('attackingZone')
-            if (!overlays.widthGuide) onOverlayToggle('widthGuide')
-          }
-        }}
-        className={`px-2.5 py-1.5 rounded text-xs font-bold transition-all
-          ${attackActive ? 'bg-yellow-600 text-white ring-2 ring-yellow-400' : 'bg-yellow-900/60 text-yellow-200 hover:bg-yellow-900'}`}>
-        ⭐ Attack
-      </button>
-      <button
-        onClick={() => onOverlayToggle('thirds')}
-        className={`px-2.5 py-1.5 rounded text-xs font-bold transition-all
-          ${overlays.thirds ? 'bg-gray-500 text-white ring-2 ring-gray-300' : 'bg-gray-700/80 text-gray-300 hover:bg-gray-600'}`}>
-        ⅓ Thirds
-      </button>
+      {/* Preset overlay buttons — hidden on mobile (use ☰ panel instead) */}
+      <div className="hidden md:flex items-center gap-1.5">
+        <div className="w-px h-6 bg-gray-600 mx-0.5" />
+        <button
+          onClick={() => {
+            if (defendActive) {
+              if (overlays.dangerZone) onOverlayToggle('dangerZone')
+              if (overlays.noClearMiddle) onOverlayToggle('noClearMiddle')
+              if (overlays.clearingZones) onOverlayToggle('clearingZones')
+            } else {
+              if (!overlays.dangerZone) onOverlayToggle('dangerZone')
+              if (!overlays.noClearMiddle) onOverlayToggle('noClearMiddle')
+              if (!overlays.clearingZones) onOverlayToggle('clearingZones')
+            }
+          }}
+          className={`px-2.5 py-1.5 rounded text-xs font-bold transition-all
+            ${defendActive ? 'bg-red-700 text-white ring-2 ring-red-400' : 'bg-red-900/60 text-red-200 hover:bg-red-900'}`}>
+          🛡 Defend
+        </button>
+        <button
+          onClick={() => {
+            if (buildOutActive) {
+              if (overlays.buildOutZone) onOverlayToggle('buildOutZone')
+              if (overlays.passingLanes) onOverlayToggle('passingLanes')
+              if (overlays.widthGuide) onOverlayToggle('widthGuide')
+            } else {
+              if (!overlays.buildOutZone) onOverlayToggle('buildOutZone')
+              if (!overlays.passingLanes) onOverlayToggle('passingLanes')
+              if (!overlays.widthGuide) onOverlayToggle('widthGuide')
+            }
+          }}
+          className={`px-2.5 py-1.5 rounded text-xs font-bold transition-all
+            ${buildOutActive ? 'bg-blue-700 text-white ring-2 ring-blue-400' : 'bg-blue-900/60 text-blue-200 hover:bg-blue-900'}`}>
+          📏 Build-Out
+        </button>
+        <button
+          onClick={() => {
+            if (attackActive) {
+              if (overlays.attackingZone) onOverlayToggle('attackingZone')
+              if (overlays.widthGuide) onOverlayToggle('widthGuide')
+            } else {
+              if (!overlays.attackingZone) onOverlayToggle('attackingZone')
+              if (!overlays.widthGuide) onOverlayToggle('widthGuide')
+            }
+          }}
+          className={`px-2.5 py-1.5 rounded text-xs font-bold transition-all
+            ${attackActive ? 'bg-yellow-600 text-white ring-2 ring-yellow-400' : 'bg-yellow-900/60 text-yellow-200 hover:bg-yellow-900'}`}>
+          ⭐ Attack
+        </button>
+        <button
+          onClick={() => onOverlayToggle('thirds')}
+          className={`px-2.5 py-1.5 rounded text-xs font-bold transition-all
+            ${overlays.thirds ? 'bg-gray-500 text-white ring-2 ring-gray-300' : 'bg-gray-700/80 text-gray-300 hover:bg-gray-600'}`}>
+          ⅓ Thirds
+        </button>
+      </div>
 
       <div className="w-px h-6 bg-gray-600 mx-0.5" />
 

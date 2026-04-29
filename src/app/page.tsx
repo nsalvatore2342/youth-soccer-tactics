@@ -508,7 +508,7 @@ export default function Home() {
     : null
 
   return (
-    <div className="flex flex-col h-screen bg-gray-950 overflow-hidden">
+    <div className="flex flex-col h-dvh bg-gray-950 overflow-hidden">
       {/* ─── Header ─── */}
       <header className="flex items-center gap-2 px-3 py-2 bg-gray-900 border-b border-gray-700 flex-shrink-0 z-10">
         <div className="flex items-center gap-2">
@@ -524,13 +524,15 @@ export default function Home() {
         {/* Save/Load */}
         <button onClick={() => setShowSavePanel(true)}
           className="px-2.5 py-1.5 rounded bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs font-semibold">
-          💾 Save / Load
+          <span className="sm:hidden">💾</span>
+          <span className="hidden sm:inline">💾 Save / Load</span>
         </button>
 
         {/* Toggle side panel */}
         <button onClick={() => setSidePanelOpen((p) => !p)}
           className="px-2.5 py-1.5 rounded bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs font-semibold">
-          {sidePanelOpen ? '▶ Hide Panel' : '◀ Show Panel'}
+          <span className="sm:hidden">{sidePanelOpen ? '✕' : '☰'}</span>
+          <span className="hidden sm:inline">{sidePanelOpen ? '▶ Hide Panel' : '◀ Show Panel'}</span>
         </button>
       </header>
 
@@ -582,9 +584,15 @@ export default function Home() {
           />
         </div>
 
-        {/* Side panel */}
+        {/* Side panel — fixed overlay on mobile, in-flow sidebar on md+ */}
         {sidePanelOpen && (
-          <aside className="w-72 flex-shrink-0 flex flex-col bg-gray-900 border-l border-gray-700 overflow-hidden">
+          <>
+            {/* Mobile backdrop */}
+            <div
+              className="fixed inset-0 bg-black/60 z-20 md:hidden"
+              onClick={() => setSidePanelOpen(false)}
+            />
+            <aside className="fixed inset-y-0 right-0 z-30 w-4/5 max-w-xs md:relative md:inset-auto md:z-auto md:w-72 md:max-w-none flex-shrink-0 flex flex-col bg-gray-900 border-l border-gray-700 overflow-hidden">
             {/* Tabs */}
             <div className="flex border-b border-gray-700 flex-shrink-0">
               {TABS.map((tab) => (
@@ -599,6 +607,12 @@ export default function Home() {
                   <span className="hidden sm:block">{tab.label}</span>
                 </button>
               ))}
+              {/* Close button — mobile only */}
+              <button
+                className="md:hidden px-3 text-gray-400 hover:text-white hover:bg-gray-800 border-l border-gray-700 flex-shrink-0"
+                onClick={() => setSidePanelOpen(false)}>
+                ✕
+              </button>
             </div>
 
             {/* Tab content */}
@@ -652,7 +666,8 @@ export default function Home() {
               )}
               {activeTab === 'ai' && <AICoachBox />}
             </div>
-          </aside>
+            </aside>
+          </>
         )}
       </div>
 
