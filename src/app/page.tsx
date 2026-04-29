@@ -508,7 +508,7 @@ export default function Home() {
     : null
 
   return (
-    <div className="flex flex-col h-dvh bg-gray-950 overflow-hidden">
+    <div className="flex flex-col h-full bg-gray-950 overflow-hidden">
       {/* ─── Header ─── */}
       <header className="flex items-center gap-2 px-3 py-2 bg-gray-900 border-b border-gray-700 flex-shrink-0 z-10">
         <div className="flex items-center gap-2">
