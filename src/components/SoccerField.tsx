@@ -333,8 +333,8 @@ export default function SoccerField({
       {overlays.buildOutZone && (
         <g>
           {/* Shaded build-out zones */}
-          <rect x={0} y={0}  width={68} height={35} fill="rgba(59,130,246,0.2)" />
-          <rect x={0} y={70} width={68} height={35} fill="rgba(59,130,246,0.2)" />
+          <rect x={0} y={0}  width={68} height={35} fill="rgba(59,130,246,0.1)" />
+          <rect x={0} y={70} width={68} height={35} fill="rgba(59,130,246,0.1)" />
 
           {/* Away build-out line (y=35) — glow + main line */}
           <line x1={0} y1={35} x2={68} y2={35}

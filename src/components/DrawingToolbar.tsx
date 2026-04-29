@@ -101,12 +101,18 @@ export default function DrawingToolbar({
 
       <div className="w-px h-6 bg-gray-600 mx-0.5" />
 
-      {/* Quick teach presets */}
+      {/* Quick teach presets — click to toggle on, click again to turn all off */}
       <button
         onClick={() => {
-          if (!overlays.dangerZone) onOverlayToggle('dangerZone')
-          if (!overlays.noClearMiddle) onOverlayToggle('noClearMiddle')
-          if (!overlays.clearingZones) onOverlayToggle('clearingZones')
+          if (defendActive) {
+            if (overlays.dangerZone) onOverlayToggle('dangerZone')
+            if (overlays.noClearMiddle) onOverlayToggle('noClearMiddle')
+            if (overlays.clearingZones) onOverlayToggle('clearingZones')
+          } else {
+            if (!overlays.dangerZone) onOverlayToggle('dangerZone')
+            if (!overlays.noClearMiddle) onOverlayToggle('noClearMiddle')
+            if (!overlays.clearingZones) onOverlayToggle('clearingZones')
+          }
         }}
         className={`px-2.5 py-1.5 rounded text-xs font-bold transition-all
           ${defendActive ? 'bg-red-700 text-white ring-2 ring-red-400' : 'bg-red-900/60 text-red-200 hover:bg-red-900'}`}>
@@ -114,9 +120,15 @@ export default function DrawingToolbar({
       </button>
       <button
         onClick={() => {
-          if (!overlays.buildOutZone) onOverlayToggle('buildOutZone')
-          if (!overlays.passingLanes) onOverlayToggle('passingLanes')
-          if (!overlays.widthGuide) onOverlayToggle('widthGuide')
+          if (buildOutActive) {
+            if (overlays.buildOutZone) onOverlayToggle('buildOutZone')
+            if (overlays.passingLanes) onOverlayToggle('passingLanes')
+            if (overlays.widthGuide) onOverlayToggle('widthGuide')
+          } else {
+            if (!overlays.buildOutZone) onOverlayToggle('buildOutZone')
+            if (!overlays.passingLanes) onOverlayToggle('passingLanes')
+            if (!overlays.widthGuide) onOverlayToggle('widthGuide')
+          }
         }}
         className={`px-2.5 py-1.5 rounded text-xs font-bold transition-all
           ${buildOutActive ? 'bg-blue-700 text-white ring-2 ring-blue-400' : 'bg-blue-900/60 text-blue-200 hover:bg-blue-900'}`}>
@@ -124,8 +136,13 @@ export default function DrawingToolbar({
       </button>
       <button
         onClick={() => {
-          if (!overlays.attackingZone) onOverlayToggle('attackingZone')
-          if (!overlays.widthGuide) onOverlayToggle('widthGuide')
+          if (attackActive) {
+            if (overlays.attackingZone) onOverlayToggle('attackingZone')
+            if (overlays.widthGuide) onOverlayToggle('widthGuide')
+          } else {
+            if (!overlays.attackingZone) onOverlayToggle('attackingZone')
+            if (!overlays.widthGuide) onOverlayToggle('widthGuide')
+          }
         }}
         className={`px-2.5 py-1.5 rounded text-xs font-bold transition-all
           ${attackActive ? 'bg-yellow-600 text-white ring-2 ring-yellow-400' : 'bg-yellow-900/60 text-yellow-200 hover:bg-yellow-900'}`}>
