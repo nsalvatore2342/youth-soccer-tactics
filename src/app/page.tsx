@@ -539,7 +539,10 @@ export default function Home() {
       {/* ─── Main content ─── */}
       <div className="flex flex-1 overflow-hidden min-h-0">
         {/* Field area */}
-        <div className="flex-1 bg-gray-800 flex items-center justify-center p-2 overflow-hidden min-w-0">
+        <div
+          className="flex-1 bg-gray-800 flex items-center justify-center p-2 overflow-hidden min-w-0"
+          onContextMenu={(e) => { e.preventDefault(); setActiveTool('select') }}
+        >
           <SoccerField
             players={players}
             ball={ball}
