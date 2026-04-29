@@ -205,12 +205,15 @@ export default function SoccerField({
     const isHome = p.team === 'home'
     const isDragging = dragging?.id === p.id
     const r = 2.8
+    // Pure SVG transform: translate to position, then scale around that origin (no CSS transforms)
+    const svgTransform = isDragging
+      ? `translate(${p.x},${p.y}) scale(1.25)`
+      : `translate(${p.x},${p.y})`
 
     return (
       <g
         key={p.id}
-        // SVG attribute positions the player in SVG coordinate space — never use CSS transform here
-        transform={`translate(${p.x},${p.y})`}
+        transform={svgTransform}
         style={{
           pointerEvents: activeTool === 'select' ? 'all' : 'none',
           touchAction: 'none',
@@ -222,53 +225,51 @@ export default function SoccerField({
           if (activeTool === 'select' && !didDragRef.current) onPlayerClick(p.id)
         }}
       >
-        {/* Large invisible hit area — makes the player easy to grab on touch */}
+        {/* Large invisible hit area — 2× radius for easy grabbing on touch */}
         <circle r={r * 2} fill="transparent" />
-
-        {/* Inner group: CSS scale-only transform, centered at (0,0) = player center */}
-        <g style={{
-          transform: `scale(${isDragging ? 1.25 : 1})`,
-          transition: isDragging ? 'none' : 'transform 0.12s ease',
-        }}>
-          {/* Dropped shadow */}
-          <ellipse
-            cx={isDragging ? 0.6 : 0.3}
-            cy={isDragging ? r * 1.4 : r * 0.8}
-            rx={isDragging ? r * 1.3 : r * 0.9}
-            ry={isDragging ? r * 0.55 : r * 0.35}
-            fill={isDragging ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.2)'}
-          />
-          {/* Player circle */}
-          <circle r={r}
-            fill={p.color}
-            stroke={isDragging ? 'white' : isHome ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.6)'}
-            strokeWidth={isDragging ? 0.7 : isHome ? 0.5 : 0.3}
-          />
-          {/* Jersey number */}
-          <text
-            textAnchor="middle" dominantBaseline="central"
-            fontSize={p.number >= 10 ? 2.4 : 2.8}
-            fontWeight="bold" fill={p.textColor}
-            fontFamily="system-ui, sans-serif"
-            style={{ pointerEvents: 'none' }}>
-            {p.number}
-          </text>
-          {/* Away team indicator dot */}
-          {!isHome && (
-            <circle cx={r * 0.65} cy={-r * 0.65} r={0.65}
-              fill="white" stroke={p.color} strokeWidth="0.15" />
-          )}
-        </g>
+        {/* Dropped shadow */}
+        <ellipse
+          cx={isDragging ? 0.6 : 0.3}
+          cy={isDragging ? r * 1.4 : r * 0.8}
+          rx={isDragging ? r * 1.3 : r * 0.9}
+          ry={isDragging ? r * 0.55 : r * 0.35}
+          fill={isDragging ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.2)'}
+        />
+        {/* Player circle */}
+        <circle r={r}
+          fill={p.color}
+          stroke={isDragging ? 'white' : isHome ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.6)'}
+          strokeWidth={isDragging ? 0.7 : isHome ? 0.5 : 0.3}
+        />
+        {/* Jersey number */}
+        <text
+          textAnchor="middle" dominantBaseline="central"
+          fontSize={p.number >= 10 ? 2.4 : 2.8}
+          fontWeight="bold" fill={p.textColor}
+          fontFamily="system-ui, sans-serif"
+          style={{ pointerEvents: 'none' }}>
+          {p.number}
+        </text>
+        {/* Away team indicator dot */}
+        {!isHome && (
+          <circle cx={r * 0.65} cy={-r * 0.65} r={0.65}
+            fill="white" stroke={p.color} strokeWidth="0.15" />
+        )}
       </g>
     )
   }
 
   const renderBall = () => {
     const isDragging = dragging?.type === 'ball'
+    const r = 2.4  // ball radius — larger than before for visibility
+    // Pure SVG transform: no CSS transforms inside SVG
+    const svgTransform = isDragging
+      ? `translate(${ball.x},${ball.y}) scale(1.25)`
+      : `translate(${ball.x},${ball.y})`
+
     return (
       <g
-        // SVG attribute positions the ball — no CSS transform on this element
-        transform={`translate(${ball.x},${ball.y})`}
+        transform={svgTransform}
         style={{
           pointerEvents: activeTool === 'select' ? 'all' : 'none',
           touchAction: 'none',
@@ -277,25 +278,33 @@ export default function SoccerField({
         }}
         onPointerDown={handleBallDown}
       >
-        {/* Large hit area */}
-        <circle r={4} fill="transparent" />
-        {/* Inner group: scale-only CSS transform centered at ball origin */}
-        <g style={{
-          transform: `scale(${isDragging ? 1.25 : 1})`,
-          transition: isDragging ? 'none' : 'transform 0.12s ease',
-        }}>
-          <ellipse cx={isDragging ? 0.5 : 0.3} cy={isDragging ? 2.4 : 1.5}
-            rx={isDragging ? 2.2 : 1.4} ry={isDragging ? 0.75 : 0.5}
-            fill="rgba(0,0,0,0.25)" />
-          <circle r={1.8} fill="white" stroke="#111" strokeWidth="0.25" />
-          <circle r={0.65} fill="#111" />
-          <line x1={0} y1={-1.8} x2={0} y2={-0.65} stroke="#111" strokeWidth={0.22} />
-          <line x1={0} y1={0.65} x2={0} y2={1.8} stroke="#111" strokeWidth={0.22} />
-          <line x1={-1.8} y1={0} x2={-0.65} y2={0} stroke="#111" strokeWidth={0.22} />
-          <line x1={0.65} y1={0} x2={1.8} y2={0} stroke="#111" strokeWidth={0.22} />
-          <line x1={-1.2} y1={-1.2} x2={-0.48} y2={-0.48} stroke="#111" strokeWidth={0.22} />
-          <line x1={1.2} y1={-1.2} x2={0.48} y2={-0.48} stroke="#111" strokeWidth={0.22} />
-        </g>
+        {/* Large invisible hit area */}
+        <circle r={r * 2.2} fill="transparent" />
+        {/* Glow ring — makes ball stand out on any background */}
+        <circle r={r + 0.8}
+          fill="none"
+          stroke={isDragging ? 'rgba(255,220,0,0.9)' : 'rgba(255,220,0,0.55)'}
+          strokeWidth="0.5"
+        />
+        {/* Shadow */}
+        <ellipse
+          cx={isDragging ? 0.5 : 0.3}
+          cy={isDragging ? r * 1.3 : r * 0.9}
+          rx={isDragging ? r * 1.2 : r * 0.85}
+          ry={isDragging ? r * 0.45 : r * 0.3}
+          fill="rgba(0,0,0,0.3)"
+        />
+        {/* Ball body */}
+        <circle r={r} fill="white" stroke="#222" strokeWidth="0.28" />
+        {/* Pentagon centre */}
+        <circle r={r * 0.27} fill="#222" />
+        {/* Spokes */}
+        <line x1={0} y1={-r} x2={0} y2={-r * 0.27} stroke="#222" strokeWidth={0.24} />
+        <line x1={0} y1={r * 0.27} x2={0} y2={r} stroke="#222" strokeWidth={0.24} />
+        <line x1={-r} y1={0} x2={-r * 0.27} y2={0} stroke="#222" strokeWidth={0.24} />
+        <line x1={r * 0.27} y1={0} x2={r} y2={0} stroke="#222" strokeWidth={0.24} />
+        <line x1={-r * 0.7} y1={-r * 0.7} x2={-r * 0.27} y2={-r * 0.27} stroke="#222" strokeWidth={0.24} />
+        <line x1={r * 0.7} y1={-r * 0.7} x2={r * 0.27} y2={-r * 0.27} stroke="#222" strokeWidth={0.24} />
       </g>
     )
   }
@@ -462,11 +471,11 @@ export default function SoccerField({
           completed: false,
         }, true)}
 
-        {/* Ball */}
-        {renderBall()}
-
-        {/* Players — rendered last so they sit on top */}
+        {/* Players */}
         {players.map(renderPlayer)}
+
+        {/* Ball — rendered after players so it always sits on top */}
+        {renderBall()}
       </svg>
 
       {/* Animation step note */}

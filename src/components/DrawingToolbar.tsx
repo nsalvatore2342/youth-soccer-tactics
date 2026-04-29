@@ -23,7 +23,7 @@ interface Props {
 }
 
 const TOOLS: { id: Tool; icon: string; label: string }[] = [
-  { id: 'select', icon: '↖', label: 'Select / Drag' },
+  { id: 'select', icon: '✋', label: 'Move Players & Ball' },
   { id: 'arrow', icon: '↗', label: 'Draw Arrow (Run)' },
   { id: 'line', icon: '—', label: 'Draw Line (Pass)' },
   { id: 'dashed', icon: '- -', label: 'Dashed Line (Option)' },
@@ -45,20 +45,30 @@ export default function DrawingToolbar({
   return (
     <div className="flex flex-wrap items-center gap-1.5 px-2 py-1.5 bg-gray-900 border-b border-gray-700">
       {/* Tool buttons */}
-      {TOOLS.map((t) => (
-        <button
-          key={t.id}
-          title={t.label}
-          onClick={() => onToolChange(t.id)}
-          className={`px-2.5 py-1.5 rounded text-sm font-bold transition-all select-none
-            ${activeTool === t.id
-              ? 'bg-yellow-400 text-gray-900 shadow-lg shadow-yellow-400/30'
-              : 'bg-gray-700 text-white hover:bg-gray-600'
-            }`}
-        >
-          {t.icon}
-        </button>
-      ))}
+      {TOOLS.map((t) => {
+        const isSelect = t.id === 'select'
+        const isActive = activeTool === t.id
+        return (
+          <button
+            key={t.id}
+            title={t.label}
+            onClick={() => onToolChange(t.id)}
+            className={`rounded font-bold transition-all select-none flex items-center gap-1
+              ${isSelect ? 'px-3 py-1.5 text-base' : 'px-2.5 py-1.5 text-sm'}
+              ${isActive
+                ? isSelect
+                  ? 'bg-green-500 text-white shadow-lg shadow-green-500/40 ring-2 ring-green-300'
+                  : 'bg-yellow-400 text-gray-900 shadow-lg shadow-yellow-400/30'
+                : isSelect
+                  ? 'bg-green-800 text-green-200 hover:bg-green-700 border border-green-600'
+                  : 'bg-gray-700 text-white hover:bg-gray-600'
+              }`}
+          >
+            <span>{t.icon}</span>
+            {isSelect && <span className="text-xs font-semibold">Move</span>}
+          </button>
+        )
+      })}
 
       <div className="w-px h-6 bg-gray-600 mx-0.5" />
 
