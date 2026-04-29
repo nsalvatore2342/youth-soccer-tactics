@@ -332,27 +332,8 @@ export default function SoccerField({
       )}
       {overlays.buildOutZone && (
         <g>
-          {/* Away build-out line (y=35) */}
-          <line x1={0} y1={35} x2={68} y2={35}
-            stroke="#93c5fd" strokeWidth="2.5" strokeDasharray="4 2" opacity={0.3} />
-          <line x1={0} y1={35} x2={68} y2={35}
-            stroke="#93c5fd" strokeWidth="1.2" strokeDasharray="4 2" />
-          <rect x={18} y={31.8} width={32} height={5.5} rx={0.8} fill="rgba(30,64,175,0.85)" />
-          <text x={34} y={33.8} textAnchor="middle" fontSize={1.9}
-            fill="white" fontWeight="bold" fontFamily="system-ui">BUILD-OUT LINE</text>
-          <text x={34} y={36.2} textAnchor="middle" fontSize={1.5}
-            fill="rgba(147,197,253,0.9)" fontFamily="system-ui">Opp. retreat when GK has ball</text>
-
-          {/* Home build-out line (y=70) */}
-          <line x1={0} y1={70} x2={68} y2={70}
-            stroke="#93c5fd" strokeWidth="2.5" strokeDasharray="4 2" opacity={0.3} />
-          <line x1={0} y1={70} x2={68} y2={70}
-            stroke="#93c5fd" strokeWidth="1.2" strokeDasharray="4 2" />
-          <rect x={18} y={66.5} width={32} height={5.5} rx={0.8} fill="rgba(30,64,175,0.85)" />
-          <text x={34} y={68.5} textAnchor="middle" fontSize={1.9}
-            fill="white" fontWeight="bold" fontFamily="system-ui">BUILD-OUT LINE</text>
-          <text x={34} y={70.9} textAnchor="middle" fontSize={1.5}
-            fill="rgba(147,197,253,0.9)" fontFamily="system-ui">Opp. retreat when GK has ball</text>
+          <line x1={0} y1={35} x2={68} y2={35} stroke="#facc15" strokeWidth="0.8" />
+          <line x1={0} y1={70} x2={68} y2={70} stroke="#facc15" strokeWidth="0.8" />
         </g>
       )}
       {overlays.thirds && (
