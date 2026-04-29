@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useCallback, useEffect, useRef } from 'react'
+import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import {
   Player, BallState, Drawing, OverlayState, Tool, Pattern,
   Formation, GameFormat, Point,
@@ -352,17 +352,7 @@ export default function Home() {
     })
 
     setBall({ x: pattern.ball.x, y: pattern.ball.y, attachedTo: null, showTarget: false })
-
-    // Load pattern drawings
-    setDrawings(
-      pattern.drawings.map((d, i) => ({
-        id: `pattern-${i}`,
-        type: d.type,
-        points: d.points,
-        color: d.color,
-        completed: true,
-      }))
-    )
+    setDrawings([])  // pattern drawings are computed per-step, not stored in state
 
     setActiveTab('patterns')
   }, [])
@@ -457,6 +447,35 @@ export default function Home() {
     setOverlays((prev) => ({ ...prev, [key]: !prev[key] }))
   }, [])
 
+  // When a pattern is active, reveal drawings step-by-step and move the ball along arrows
+  const visibleDrawings = useMemo(() => {
+    if (!activePattern) return drawings
+    const count = Math.min(animationStep + 1, activePattern.drawings.length)
+    const patternDrawings = activePattern.drawings.slice(0, count).map((d, i) => ({
+      id: `pattern-${i}`,
+      type: d.type as Drawing['type'],
+      points: d.points,
+      color: d.color,
+      completed: true,
+    }))
+    return [...patternDrawings, ...drawings]
+  }, [activePattern, animationStep, drawings])
+
+  const visibleBall = useMemo(() => {
+    if (!activePattern) return ball
+    if (animationStep === 0) return { ...ball, x: activePattern.ball.x, y: activePattern.ball.y }
+    const count = Math.min(animationStep + 1, activePattern.drawings.length)
+    const shown = activePattern.drawings.slice(0, count)
+    for (let i = shown.length - 1; i >= 0; i--) {
+      const d = shown[i]
+      if (d.type === 'arrow' || d.type === 'line' || d.type === 'dashed') {
+        const last = d.points[d.points.length - 1]
+        return { ...ball, x: last.x, y: last.y }
+      }
+    }
+    return { ...ball, x: activePattern.ball.x, y: activePattern.ball.y }
+  }, [activePattern, animationStep, ball])
+
   const handlePlayerClick = useCallback((id: string) => {
     const player = players.find((p) => p.id === id)
     if (player) setEditingPlayer(player)
@@ -547,8 +566,8 @@ export default function Home() {
         >
           <SoccerField
             players={players}
-            ball={ball}
-            drawings={drawings}
+            ball={visibleBall}
+            drawings={visibleDrawings}
             overlays={overlays}
             activeTool={activeTool}
             drawingColor={drawingColor}
